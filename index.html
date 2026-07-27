@@ -4,17 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Learning Place</title>
-    <!-- Подключаем надежные стили шахматной доски со стабильного сервера cdnjs -->
-    <link rel="stylesheet" href="https://cloudflare.com">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #1e1e1e; color: #fff; margin: 0; padding: 20px; }
         header { background: #2d2d2d; color: #00ff88; padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         h1 { margin: 0; font-size: 2.5rem; }
         .subtitle { color: #aaa; font-style: italic; margin-top: 5px; }
         .container { max-width: 600px; margin: 20px auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        /* Контейнер для доски */
-        #myBoard { width: 100%; max-width: 450px; margin: 20px auto; border: 4px solid #444; border-radius: 6px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .info-box { font-size: 1.1rem; line-height: 1.6; color: #ddd; margin-bottom: 10px; }
+        .info-box { font-size: 1.1rem; line-height: 1.6; color: #ddd; margin-bottom: 20px; }
+        
+        /* Сетка нашей шахматной доски */
+        .chess-board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; max-width: 440px; height: 440px; margin: 20px auto; border: 4px solid #444; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .square { display: flex; align-items: center; justify-content: center; font-size: 2.5rem; user-select: none; cursor: pointer; transition: background 0.2s; }
+        
+        /* Цвета клеток */
+        .white-square { background: #f0d9b5; color: #000; }
+        .black-square { background: #b58863; color: #000; }
+        
+        /* Подсветка выбранной фигуры */
+        .square.selected { background: #7b9c52 !important; }
     </style>
 </head>
 <body>
@@ -26,25 +33,87 @@
 
     <div class="container">
         <h2>Наша интерактивная доска</h2>
-        <p class="info-box">Доска полностью автономна. Вы можете использовать её для расстановки фигур и разбора партий:</p>
+        <p class="info-box">Эта доска полностью автономна. Нажмите на любую фигуру, а затем нажмите на клетку, куда хотите её переставить:</p>
         
-        <!-- Сюда скрипт выведет шахматы -->
-        <div id="myBoard"></div>
+        <!-- Шахматная доска на чистом HTML с фигурами-символами -->
+        <div class="chess-board" id="board"></div>
     </div>
 
-    <!-- Подключаем jQuery и ChessboardJS со сверхнадежного CDN -->
-    <script src="https://jquery.com"></script>
-    <script src="https://cloudflare.com"></script>
     <script>
-        // Запуск доски сразу после загрузки страницы
-        $(document).ready(function() {
-            var config = {
-                draggable: true,      /* Разрешаем двигать фигуры */
-                dropOffBoard: 'trash', /* Фигуры можно выбрасывать за доску */
-                position: 'start'     /* Начальная расстановка */
-            };
-            var board = Chessboard('myBoard', config);
-        });
+        // Начальная расстановка фигур (используем встроенные текстовые символы шахмат)
+        const initialBoard = [
+            ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
+            ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
+            ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
+        ];
+
+        const boardElement = document.getElementById('board');
+        let selectedSquare = null;
+
+        // Генерация доски
+        function createBoard() {
+            boardElement.innerHTML = '';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    
+                    // Чередование цветов клеток
+                    if ((row + col) % 2 === 0) {
+                        square.classList.add('white-square');
+                    } else {
+                        square.classList.add('black-square');
+                    }
+                    
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    square.innerText = initialBoard[row][col];
+                    
+                    // Логика кликов для перемещения фигур
+                    square.addEventListener('click', onSquareClick);
+                    boardElement.appendChild(square);
+                }
+            }
+        }
+        function onSquareClick(e) {
+            const clickedSquare = e.currentTarget;
+            const row = parseInt(clickedSquare.dataset.row);
+            const col = parseInt(clickedSquare.dataset.col);
+            
+            if (selectedSquare) {
+                // Если кликнули на ту же клетку — снимаем выделение
+                if (selectedSquare === clickedSquare) {
+                    clickedSquare.classList.remove('selected');
+                    selectedSquare = null;
+                    return;
+                }
+                
+                const fromRow = parseInt(selectedSquare.dataset.row);
+                const fromCol = parseInt(selectedSquare.dataset.col);
+                
+                // Перемещаем фигуру в массиве dữ liệu
+                initialBoard[row][col] = initialBoard[fromRow][fromCol];
+                initialBoard[fromRow][fromCol] = '';
+                
+                selectedSquare.classList.remove('selected');
+                selectedSquare = null;
+                createBoard(); // Перерисовываем доску
+            } else {
+                // Если кликнули на клетку с фигурой — выделяем её
+                if (clickedSquare.innerText !== '') {
+                    selectedSquare = clickedSquare;
+                    clickedSquare.classList.add('selected');
+                }
+            }
+        }
+
+        // Запуск
+        createBoard();
     </script>
 </body>
 </html>
