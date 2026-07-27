@@ -171,7 +171,9 @@ section{padding:88px 0;border-bottom:1px solid var(--line);}
 
 .puzzle-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
 .mini-board{
-  display:grid;grid-template-columns:repeat(8,1fr);
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:repeat(8,1fr);
   border:6px solid var(--board-frame);
   aspect-ratio:1/1;
   max-width:280px;
@@ -273,25 +275,40 @@ footer{padding:56px 0;}
     <div class="section-head">
       <div class="eyebrow">2...Nc6</div>
       <h2>Puzzles</h2>
-      <p>A first sample position. More puzzles — rated by theme and difficulty — are coming as the site grows.</p>
+      <p>Positions from my own games and studies. New ones get added over time.</p>
     </div>
     <div class="puzzle-grid">
       <div>
         <div class="mini-board" id="puzzleBoard"></div>
       </div>
       <div>
-        <span class="puzzle-tag">White to move · mate in 2</span>
-        <h3 style="font-size:1.3rem;margin-bottom:10px;">Find the forcing line</h3>
-        <p style="color:var(--parchment-dim)">This spot will hold real puzzles pulled from games and studies, each with a short explanation of the idea behind the winning move — not just the answer, but why it works.</p>
+        <span class="puzzle-tag" id="puzzleTag">Endgame study</span>
+        <h3 style="font-size:1.3rem;margin-bottom:10px;" id="puzzleTitle">Major & Pawn Finale</h3>
+        <p style="color:var(--parchment-dim)" id="puzzleDesc">A major-piece and pawn endgame. Work out the winning plan before checking a line.</p>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:22px;">
+          <button class="btn ghost" id="puzzlePrev">&larr; Prev</button>
+          <span class="board-status" id="puzzleCounter" style="margin:0;">1 / 1</span>
+          <button class="btn ghost" id="puzzleNext">Next &rarr;</button>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<footer id="contact">
+<section id="contact">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">3. Bb5</div>
+      <h2>Get in touch</h2>
+      <p>Questions, puzzle suggestions, or just want to talk chess — reach out directly.</p>
+    </div>
+    <a href="mailto:khamdamov2006@gmail.com" class="btn" style="display:inline-block;">khamdamov2006@gmail.com</a>
+  </div>
+</section>
+
+<footer>
   <div class="wrap footer-grid">
     <div>
-      <div class="eyebrow">3. Bb5</div>
       <div class="logo">Chess<span>Learning</span>Place</div>
       <p class="copyline" style="margin-top:10px;">Built and maintained by Siyovush Khamdamov.</p>
     </div>
@@ -299,6 +316,7 @@ footer{padding:56px 0;}
       <a href="https://github.com/siyovush20061019" target="_blank">GitHub</a>
       <a href="#board">Board</a>
       <a href="#puzzles">Puzzles</a>
+      <a href="mailto:khamdamov2006@gmail.com">Email</a>
     </div>
   </div>
 </footer>
@@ -383,18 +401,48 @@ function buildBoard(el, data, {interactive=false, coords=false} = {}){
 const mainData = START.map(row=>row.slice());
 buildBoard(document.getElementById('mainBoard'), mainData, {interactive:true, coords:true});
 
-// puzzle board — mate in 2 style sample position (static, non-interactive)
-const puzzleData = [
-  ['','','','','k','','',''],
-  ['','','','','','','',''],
-  ['','','','','K','','',''],
-  ['','','','','','','',''],
-  ['','','','','','','',''],
-  ['','','','','','','',''],
-  ['','','','Q','','','',''],
-  ['','','','','','','',''],
+// ---- Puzzle set ----
+// Add more puzzles by pushing another object into this array.
+// Board rows go from rank 8 (top) down to rank 1 (bottom), files a-h left to right.
+const PUZZLES = [
+  {
+    tag: "Endgame study",
+    title: "Major & Pawn Finale",
+    desc: "A major-piece and pawn endgame. Work out the winning plan before checking a line.",
+    position: [
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['','','p','p','','','',''],
+      ['Q','','r','k','p','K','',''],
+      ['','','b','','','','','R'],
+      ['','','','','P','','',''],
+      ['','','','n','','','',''],
+      ['','','','','b','','q',''],
+    ],
+  },
 ];
-buildBoard(document.getElementById('puzzleBoard'), puzzleData, {interactive:false});
+
+let puzzleIndex = 0;
+
+function renderPuzzle(){
+  const p = PUZZLES[puzzleIndex];
+  document.getElementById('puzzleTag').textContent = p.tag;
+  document.getElementById('puzzleTitle').textContent = p.title;
+  document.getElementById('puzzleDesc').textContent = p.desc;
+  document.getElementById('puzzleCounter').textContent = `${puzzleIndex+1} / ${PUZZLES.length}`;
+  buildBoard(document.getElementById('puzzleBoard'), p.position.map(row=>row.slice()), {interactive:false});
+}
+
+document.getElementById('puzzlePrev').addEventListener('click', ()=>{
+  puzzleIndex = (puzzleIndex - 1 + PUZZLES.length) % PUZZLES.length;
+  renderPuzzle();
+});
+document.getElementById('puzzleNext').addEventListener('click', ()=>{
+  puzzleIndex = (puzzleIndex + 1) % PUZZLES.length;
+  renderPuzzle();
+});
+
+renderPuzzle();
 
 // theme switching
 function applyTheme(name){
